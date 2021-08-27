@@ -9,17 +9,9 @@ import (
 func main() {
 	deliveryChan := make(chan kafka.Event)
 	producer := NewKafkaProducer()
-	Publish("mensagem", "teste", producer, nil, deliveryChan)
-
-	e := <-deliveryChan
-	msg := e.(*kafka.Message)
-
-	if msg .TopicPartition.Error != nil{
-		fmt.Println("Erro ao enviar")
-	}else{
-		fmt.Println("Mensagem enviada", msg.TopicPartition)
-	}
-
+	Publish("mensagem2", "teste", producer, nil, deliveryChan)
+	go DeliveryReport(deliveryChan) //async
+	fmt.Println("Printa antes da chamada assincrona")
 	producer.Flush(9000)
 }
 
@@ -47,4 +39,17 @@ func Publish(msg string, topic string, producer *kafka.Producer, key []byte, del
 		return err
 	}
 	return nil
+}
+
+func DeliveryReport(deliverychan chan kafka.Event){
+	for e:= range deliverychan{
+		switch ev:= e.(type){
+		case *kafka.Message:
+			if ev.TopicPartition.Error != nil{
+				fmt.Println("Erro ao enviar")
+			}else{
+				fmt.Println("Mensagem enviada", ev.TopicPartition)
+			}
+		}
+	}
 }
