@@ -12,12 +12,18 @@ func main() {
 	Publish("mensagem2", "teste", producer, nil, deliveryChan)
 	go DeliveryReport(deliveryChan) //async
 	fmt.Println("Printa antes da chamada assincrona")
-	producer.Flush(9000)
+	producer.Flush(1000)
 }
 
 func NewKafkaProducer() *kafka.Producer {
 	configMap := &kafka.ConfigMap{
 		"bootstrap.servers": "host.docker.internal:9094",
+		"delivery.timeout.ms": "0",   // espera a msg independente do tempo de entrega
+		"acks": "all",  			  // 0 -> mando msg e n preciso esperar retorno
+									  // 1 -> manda mensagem e espero que o lider receba a msg
+									  // all -> espero que a mensagem seja entregue para o lider e para as replicas
+									  // (particoes do insync brokers)
+		"enable.idempotence": "true", // garante ordem de entrega das msg e apenas 1x
 	}
 	p, err := kafka.NewProducer(configMap)
 
